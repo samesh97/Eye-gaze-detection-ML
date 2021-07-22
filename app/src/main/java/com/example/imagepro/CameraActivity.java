@@ -8,13 +8,16 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -30,6 +33,9 @@ import java.io.IOException;
 
 public class CameraActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2{
     private static final String TAG="MainActivity";
+
+
+    private Button button;
 
     private Mat mRgba;
     private Mat mGray;
@@ -78,6 +84,12 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         mOpenCvCameraView.setCameraIndex(1);
         mOpenCvCameraView.setCvCameraViewListener(this);
 
+
+        button = findViewById(R.id.button);
+
+
+
+
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
 
@@ -102,6 +114,8 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                             ImageView b = findViewById(R.id.xxxz);
                             b.setImageBitmap(finalBitmap);
 
+
+
                         }
                     });
                 }
@@ -118,6 +132,23 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                             b.animate().x(x);
                             b.animate().y(y);
 
+                            int[] location = new int[2];
+                            button.getLocationOnScreen(location);
+                            int xx = location[0];
+                            int yy = location[1];
+
+                            if(x >= xx)
+                            {
+                                Log.d("fsgseg","Contacted");
+                                button.setBackgroundColor(Color.RED);
+                            }
+                            else
+                            {
+                                button.setBackgroundColor(Color.BLACK);
+                            }
+
+                           // Log.d("fsgseg","X - " + x + "," + xx);
+
                         }
                     });
                 }
@@ -126,14 +157,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         catch (IOException e){
             e.printStackTrace();
         }
-        // now select device and run
 
-        //D/FacialDetector: CNN model is loaded
-        //D/FacialDetector: Classifier is loaded
-        //I/MainActivity: OpenCv Is loaded
-
-        // Next video we will detect face and then pass cropped face to interpreter which give output
-        // x,y coordinate of 15 keypoints
     }
 
     @Override

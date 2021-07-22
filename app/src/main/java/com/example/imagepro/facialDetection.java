@@ -211,7 +211,9 @@ public class facialDetection {
 
                     eyeStartingX = (int) x_val;
 
-                    //Imgproc.circle(resizeImage,new Point(x_val,y_val),1, new Scalar(0,255,0,255), -1);
+                    Imgproc.line(resizeImage,new Point(x_val - 2,y_val - 10),new Point(x_val - 2,y_val + 10),new Scalar(255,0,0,255),1);
+
+                   // Imgproc.circle(resizeImage,new Point(x_val,y_val),1, new Scalar(0,255,0,255), -1);
                 }
                 if(j == 78)
                 {
@@ -219,6 +221,8 @@ public class facialDetection {
                     float y_val = (float) Array.get(Array.get(result,0),j + 1);
 
                     eyeEndingX = (int) x_val;
+
+                    Imgproc.line(resizeImage,new Point(x_val,y_val - 10),new Point(x_val,y_val + 10),new Scalar(255,0,0,255),1);
 
                    // Imgproc.circle(resizeImage,new Point(x_val,y_val),1, new Scalar(0,255,0,255), -1);
                 }
@@ -229,7 +233,9 @@ public class facialDetection {
 
                     eyeStartingY = (int) y_val;
 
-                   // Imgproc.circle(resizeImage,new Point(x_val,y_val),1, new Scalar(0,255,0,255), -1);
+                    //Imgproc.line(resizeImage,new Point(x_val - 10,y_val),new Point(x_val + 10,y_val),new Scalar(255,0,0,255),1);
+
+                    //Imgproc.circle(resizeImage,new Point(x_val,y_val),1, new Scalar(0,255,0,255), -1);
                 }
                 if(j == 82)
                 {
@@ -238,7 +244,11 @@ public class facialDetection {
 
                     eyeEndingY = (int) y_val;
 
-                   // Imgproc.circle(resizeImage,new Point(x_val,y_val),1, new Scalar(0,255,0,255), -1);
+                    //Imgproc.line(resizeImage,new Point(x_val - 10,y_val),new Point(x_val + 10,y_val),new Scalar(255,0,0,255),1);
+
+                   // Imgproc.line(resizeImage,new Point(),new Point(),new Scalar(255,0,0,255),5);
+
+                    //Imgproc.circle(resizeImage,new Point(x_val,y_val),1, new Scalar(0,255,0,255), -1);
                 }
 
             }
@@ -303,23 +313,23 @@ public class facialDetection {
 
                     int x = (int) (p.get_m10() / p.get_m00());
                     int y = (int) (p.get_m01() / p.get_m00());
-                    Imgproc.circle(eye, new Point(x, y), 4, new Scalar(255,49,0,255));
+                    //Imgproc.circle(eye, new Point(x, y), 4, new Scalar(255,49,0,255));
 
 
-                    findViewPoint(x,y,binary);
+                    findViewPoint(x,y,eyeStartingX,eyeEndingX,binary);
 
                     //draw horizontal and vertical lines to create a cross
-                    Imgproc.line(eye,new Point(x - 20,y),new Point(x + 20,y),new Scalar(0, 255, 0));
-                    Imgproc.line(eye,new Point(x,y - 20),new Point(x,y + 20),new Scalar(0, 255, 0));
+                    Imgproc.line(eye,new Point(x - 5,y),new Point(x + 5,y),new Scalar(0, 255, 0));
+                    Imgproc.line(eye,new Point(x,y - 5),new Point(x,y + 5),new Scalar(0, 255, 0));
 
                     //draw circle in the gray frame
-                    Imgproc.circle(binary, new Point(x, y), 5, new Scalar(0,0,0,255),10);
+                    Imgproc.circle(binary, new Point(x, y), 3, new Scalar(0,0,0,255),3);
                 }
 
 
 
                 Imgproc.cvtColor(eye,eye,Imgproc.THRESH_BINARY);
-                s.onEye(eye);
+                s.onEye(binary);
             }
             catch (Exception e){}
 
@@ -341,52 +351,42 @@ public class facialDetection {
         return mat_image;
     }
 
-    private void findViewPoint(int x, int y,Mat mat)
+    private void findViewPoint(int x, int y,int sX,int eX,Mat mat)
     {
 
 
-        // x (6 - 12)
+        int range = eX - sX;
+        int equalXPixels = dWidth / range;
 
-        int calW = dWidth /  6;
-        int calH = dHeight / 6;
-
-        calW = calW * (x - 6);
-        calH = calH * (y - 6);
-
-        if(calW > dWidth)
+        if(x <= 9)
         {
-            calW = dWidth;
+            x = (range / 4) * 4;
         }
-        if(calH > dHeight)
+        else if(x == 10)
         {
-            calH = dHeight;
+            x = (range / 4) * 3;
         }
-        if(calW < 0)
+        else if(x == 11)
         {
-            calW = 0;
+            x = (range / 4) * 2;
         }
-        if(calH < 0)
+        else if(x == 12)
         {
-            calH = 0;
+            x = (range / 4) * 1;
+        }
+        else
+        {
+            x = (range / 4) * 0;
         }
 
-        s.onCoChanged(calW,calH);
 
-        Log.d("fsffsefse","Top" + calW + " , " + dHeight);
+        int calcX = x * equalXPixels;
 
-//        if(y <= 5)
-//        {
-//            Log.d("fsffsefse","Top" + x + " , " + y);
-//        }
-//        else if(y >= 7)
-//        {
-//            Log.d("fsffsefse","Bottom" + x + " , " + y);
-//        }
-//        else
-//        {
-//            Log.d("fsffsefse","Center" + x + " , " + y);
-//        }
-        //Log.d("fsffsefse","" + x + " , " + y);
+
+        s.onCoChanged(calcX,dHeight / 2);
+
+        Log.d("fsffsefsess","X - " + x + " Range - " + (eX - sX));
+
     }
 
     private ByteBuffer convertBitmapToByteBuffer(Bitmap scaledBitmap) {
