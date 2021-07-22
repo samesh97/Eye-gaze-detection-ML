@@ -41,6 +41,9 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     private Mat mGray;
     private CameraBridgeViewBase mOpenCvCameraView;
     private facialDetection facialDetection;
+
+
+
     private BaseLoaderCallback mLoaderCallback =new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
@@ -211,6 +214,8 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
         Mat out=new Mat();
         // pass real-time frame in recognizeImage
+
+
         out = facialDetection.recognizeImage(mRgba);
         // Display out Mat image
         return mRgba;

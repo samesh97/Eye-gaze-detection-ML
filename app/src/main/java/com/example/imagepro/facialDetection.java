@@ -272,7 +272,7 @@ public class facialDetection {
 
 
                 Mat binary = new Mat();
-                Imgproc.threshold(gray, binary,     25, 255, Imgproc.THRESH_BINARY);
+                Imgproc.threshold(gray, binary,     55, 255, Imgproc.THRESH_BINARY);
 
                 List<MatOfPoint> contours = new ArrayList<>();
                 Mat hierarchy = new Mat();
@@ -316,14 +316,14 @@ public class facialDetection {
                     //Imgproc.circle(eye, new Point(x, y), 4, new Scalar(255,49,0,255));
 
 
-                    findViewPoint(x,y,eyeStartingX,eyeEndingX,binary);
+                    findViewPoint(x,y,eyeStartingX,eyeEndingX,eyeStartingY,eyeEndingY,binary);
 
                     //draw horizontal and vertical lines to create a cross
                     Imgproc.line(eye,new Point(x - 5,y),new Point(x + 5,y),new Scalar(0, 255, 0));
                     Imgproc.line(eye,new Point(x,y - 5),new Point(x,y + 5),new Scalar(0, 255, 0));
 
                     //draw circle in the gray frame
-                    Imgproc.circle(binary, new Point(x, y), 3, new Scalar(0,0,0,255),3);
+                    //Imgproc.circle(binary, new Point(x, y), 3, new Scalar(0,0,0,255),3);
                 }
 
 
@@ -351,7 +351,7 @@ public class facialDetection {
         return mat_image;
     }
 
-    private void findViewPoint(int x, int y,int sX,int eX,Mat mat)
+    private void findViewPoint(int x, int y,int sX,int eX,int sY,int eY,Mat mat)
     {
 
 
@@ -383,9 +383,32 @@ public class facialDetection {
         int calcX = x * equalXPixels;
 
 
-        s.onCoChanged(calcX,dHeight / 2);
+        int rangeHeight = eY - sY;
+        int equalYPixels = dHeight / rangeHeight;
 
-        Log.d("fsffsefsess","X - " + x + " Range - " + (eX - sX));
+        if(y <= 5)
+        {
+            y = 0;
+        }
+        if(y == 7)
+        {
+            y = rangeHeight / 2;
+        }
+        else if(y >= 8)
+        {
+            y = rangeHeight;
+        }
+
+        int calcY = y * equalYPixels;
+
+
+
+
+
+
+        s.onCoChanged(calcX,calcY);
+
+        Log.d("fsffsefsess","Y - " + y + " Range - " + (eY - sY));
 
     }
 
