@@ -272,7 +272,7 @@ public class facialDetection {
 
 
                 Mat binary = new Mat();
-                Imgproc.threshold(gray, binary,     55, 255, Imgproc.THRESH_BINARY);
+                Imgproc.threshold(gray, binary,45, 255, Imgproc.THRESH_BINARY);
 
                 List<MatOfPoint> contours = new ArrayList<>();
                 Mat hierarchy = new Mat();
@@ -291,7 +291,6 @@ public class facialDetection {
 
                 for ( int contourIdx = 0; contourIdx < contours.size(); contourIdx++ )
                 {
-                    Log.d("Contour","" +contours.size());
 
                     double contourArea = Imgproc.contourArea(contours.get(contourIdx));
                     if (largestContuorArea < contourArea)
@@ -301,7 +300,6 @@ public class facialDetection {
                     }
                 }
 
-                Log.d("ContourArea","" + largestContuorArea);
 
                 if(contours.size() > position)
                 {
@@ -388,15 +386,23 @@ public class facialDetection {
 
         if(y <= 5)
         {
-            y = 0;
+            y = (rangeHeight / 4) * 0;
         }
-        if(y == 7)
+        else if(y == 6)
         {
-            y = rangeHeight / 2;
+            y = (rangeHeight / 4) * 1;
+        }
+        else if(y == 7)
+        {
+            y = (rangeHeight / 4) * 2;
+        }
+        else if(y == 8)
+        {
+            y = (rangeHeight / 4) * 3;
         }
         else if(y >= 8)
         {
-            y = rangeHeight;
+            y = (rangeHeight / 4) * 4;
         }
 
         int calcY = y * equalYPixels;

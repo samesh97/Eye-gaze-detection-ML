@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -30,6 +31,7 @@ import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class CameraActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2{
     private static final String TAG="MainActivity";
@@ -41,6 +43,8 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     private Mat mGray;
     private CameraBridgeViewBase mOpenCvCameraView;
     private facialDetection facialDetection;
+
+    private ArrayList<View> viewsInDisplay = new ArrayList<>();
 
 
 
@@ -89,6 +93,13 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
 
         button = findViewById(R.id.button);
+        Button btn1 = findViewById(R.id.button1);
+        Button btn2 = findViewById(R.id.button2);
+        Button btn3 = findViewById(R.id.button3);
+        viewsInDisplay.add(button);
+        viewsInDisplay.add(btn1);
+        viewsInDisplay.add(btn2);
+        viewsInDisplay.add(btn3);
 
 
 
@@ -130,25 +141,12 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                         @Override
                         public void run() {
 
-                            ImageView b = findViewById(R.id.xxx);
 
-                            b.animate().x(x);
-                            b.animate().y(y);
 
-                            int[] location = new int[2];
-                            button.getLocationOnScreen(location);
-                            int xx = location[0];
-                            int yy = location[1];
 
-                            if(x >= xx)
-                            {
-                                Log.d("fsgseg","Contacted");
-                                button.setBackgroundColor(Color.RED);
-                            }
-                            else
-                            {
-                                button.setBackgroundColor(Color.BLACK);
-                            }
+                            findViewPoint(x,y);
+
+
 
                            // Log.d("fsgseg","X - " + x + "," + xx);
 
@@ -161,6 +159,39 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
             e.printStackTrace();
         }
 
+    }
+    void findViewPoint(int x,int y)
+    {
+        for(View view : viewsInDisplay)
+        {
+            int[] location = new int[2];
+            view.getLocationOnScreen(location);
+
+            int viewX = location[0];
+            int viewY = location[1];
+
+            Log.d("aaaaaaaaaaaa","X - " + x + ", View X - " + (viewX - view.getWidth()));
+
+            int viewMaxWidth = viewX + view.getWidth();
+            int viewMinWidth = viewX - view.getWidth();
+
+            int viewMaxHeight = viewY + view.getHeight();
+            int viewMinHeight = viewY - view.getHeight();
+
+            if((x >= viewMinWidth && x <= viewMaxWidth) && (y >= viewMinHeight && y <= viewMaxHeight))
+            {
+                view.setBackgroundColor(Color.RED);
+                ImageView b = findViewById(R.id.xxx);
+
+                b.animate().x((viewMinWidth + viewMaxWidth) / 2);
+                b.animate().y((viewMinHeight + viewMaxHeight) / 2);
+            }
+            else
+            {
+                view.setBackgroundColor(Color.BLACK);
+            }
+
+        }
     }
 
     @Override
