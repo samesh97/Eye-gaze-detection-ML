@@ -143,6 +143,11 @@ public class GestureDetection
                     output = "Bottom";
                 }
             }
+            else if(bottom > max)
+            {
+                //bottom
+                output = "Bottom";
+            }
 
         }
 
