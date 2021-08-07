@@ -8,6 +8,7 @@ import android.util.Log;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfRect;
@@ -34,6 +35,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Vector;
 
 public class facialDetection {
 
@@ -48,6 +50,16 @@ public class facialDetection {
     private final success s;
 
     private int dHeight,dWidth = 0;
+
+    private List<Point> faceLeftJawLinePoints = new ArrayList<>();
+    private List<Point> faceRightJawLinePoints = new ArrayList<>();
+    private List<Point> faceLeftEyeBrowLinePoints = new ArrayList<>();
+    private List<Point> faceRightEyeBrowLinePoints = new ArrayList<>();
+    private List<Point> faceLeftEyeLinePoints = new ArrayList<>();
+    private List<Point> faceRightEyeLinePoints = new ArrayList<>();
+    private List<Point> faceNosePoints = new ArrayList<>();
+    private List<Point> faceNoseBottomPoints = new ArrayList<>();
+    private List<Point> faceMouthPoints = new ArrayList<>();
 
     // on start
     facialDetection(AssetManager assetManager, Context context, String modelPath, int inputSize,int height,int width,success s) throws IOException{
@@ -141,10 +153,12 @@ public class facialDetection {
         }
 
         // create faceArray
-        Rect[] faceArray=faces.toArray();
+        Rect[] faceArray = faces.toArray();
         // loop through each face in faceArray
 
-        for(int i=0;i<faceArray.length;i++)
+
+
+        for(int i = 0; i < faceArray.length; i++)
         {
            int x1 = (int) faceArray[i].tl().x;
            int y1 = (int) faceArray[i].tl().y;
@@ -181,9 +195,16 @@ public class facialDetection {
 
 
 
+
             Size sz = new Size(INPUT_SIZE,INPUT_SIZE);
             Mat resizeImage = new Mat();
+            Mat mMat = new Mat();
             Imgproc.resize(cropped_rgba,resizeImage,sz,0,0,Imgproc.INTER_CUBIC);
+            Imgproc.resize(cropped_rgba,mMat,sz,0,0,Imgproc.INTER_CUBIC);
+
+            Imgproc.cvtColor(mMat,mMat,Imgproc.COLOR_BGR2GRAY);
+            Imgproc.threshold(mMat, mMat,255, 255, Imgproc.THRESH_BINARY_INV);
+            Imgproc.cvtColor(mMat,mMat,Imgproc.COLOR_GRAY2BGR);
 
             Bitmap bitmap = null;
             bitmap = Bitmap.createBitmap(cropped_rgba.cols(),cropped_rgba.rows(),Bitmap.Config.ARGB_8888);
@@ -199,60 +220,107 @@ public class facialDetection {
             float[][] result = new float[1][136];
             interpreter.run(byteBuffer,result);
 
+
             int eyeStartingX = 0,eyeEndingX = 0;
             int eyeStartingY = 0,eyeEndingY = 0;
 
             for(int j = 0; j < 136; j = j + 2)
             {
+                float x_val = (float) Array.get(Array.get(result,0),j);
+                float y_val = (float) Array.get(Array.get(result,0),j + 1);
+
                 if(j == 72)
                 {
-                    float x_val = (float) Array.get(Array.get(result,0),j);
-                    float y_val = (float) Array.get(Array.get(result,0),j + 1);
-
                     eyeStartingX = (int) x_val;
-
                     Imgproc.line(resizeImage,new Point(x_val - 2,y_val - 10),new Point(x_val - 2,y_val + 10),new Scalar(255,0,0,255),1);
 
-                   // Imgproc.circle(resizeImage,new Point(x_val,y_val),1, new Scalar(0,255,0,255), -1);
                 }
                 if(j == 78)
                 {
-                    float x_val = (float) Array.get(Array.get(result,0),j);
-                    float y_val = (float) Array.get(Array.get(result,0),j + 1);
-
                     eyeEndingX = (int) x_val;
 
                     Imgproc.line(resizeImage,new Point(x_val,y_val - 10),new Point(x_val,y_val + 10),new Scalar(255,0,0,255),1);
 
-                   // Imgproc.circle(resizeImage,new Point(x_val,y_val),1, new Scalar(0,255,0,255), -1);
                 }
                 if(j == 76)
                 {
-                    float x_val = (float) Array.get(Array.get(result,0),j);
-                    float y_val = (float) Array.get(Array.get(result,0),j + 1);
-
                     eyeStartingY = (int) y_val;
-
-                    //Imgproc.line(resizeImage,new Point(x_val - 10,y_val),new Point(x_val + 10,y_val),new Scalar(255,0,0,255),1);
-
-                    //Imgproc.circle(resizeImage,new Point(x_val,y_val),1, new Scalar(0,255,0,255), -1);
                 }
                 if(j == 82)
                 {
-                    float x_val = (float) Array.get(Array.get(result,0),j);
-                    float y_val = (float) Array.get(Array.get(result,0),j + 1);
-
                     eyeEndingY = (int) y_val;
-
-                    //Imgproc.line(resizeImage,new Point(x_val - 10,y_val),new Point(x_val + 10,y_val),new Scalar(255,0,0,255),1);
-
-                   // Imgproc.line(resizeImage,new Point(),new Point(),new Scalar(255,0,0,255),5);
-
-                    //Imgproc.circle(resizeImage,new Point(x_val,y_val),1, new Scalar(0,255,0,255), -1);
                 }
+
+                 //Imgproc.circle(resizeImage,new Point(x_val,y_val),1, new Scalar(0,255,0,255), -1);
+
+//                 || j == 42 || j == 16 || j == 24
+                if(j >= 0 && j <= 16)
+                {
+                    Point point = new Point(x_val,y_val);
+                    faceLeftJawLinePoints.add(point);
+
+                    if(j == 16) faceRightJawLinePoints.add(point);
+                }
+                else if(j >= 18 && j <= 32)
+                {
+                    Point point = new Point(x_val,y_val);
+                    faceRightJawLinePoints.add(point);
+                }
+                else if(j >= 34 && j <= 42)
+                {
+                    Point point = new Point(x_val,y_val);
+                    faceLeftEyeBrowLinePoints.add(point);
+                }
+                else if(j >= 44 && j <= 52)
+                {
+                    Point point = new Point(x_val,y_val);
+                    faceRightEyeBrowLinePoints.add(point);
+                }
+                else if(j >= 72 && j <= 82)
+                {
+                    Point point = new Point(x_val,y_val);
+                    faceLeftEyeLinePoints.add(point);
+                }
+                else if(j >= 84 && j <= 94)
+                {
+                    Point point = new Point(x_val,y_val);
+                    faceRightEyeLinePoints.add(point);
+                }
+                else if(j >= 54 && j <= 60)
+                {
+                    Point point = new Point(x_val,y_val);
+                    faceNosePoints.add(point);
+                }
+                else if(j >= 120 && j <= 134)
+                {
+                    Point point = new Point(x_val,y_val);
+                    faceMouthPoints.add(point);
+                }
+                else if(j >= 60 && j <= 70)
+                {
+                    Point point = new Point(x_val,y_val);
+                    faceNoseBottomPoints.add(point);
+                }
+//                else
+//                {
+//                    Imgproc.circle(mMat,new Point(x_val,y_val),1, new Scalar(255,0,0,255), -1);
+//                }
+
 
             }
 
+            drawLine(faceLeftJawLinePoints,mMat,new Scalar(255,0,0,255));
+            drawLine(faceRightJawLinePoints,mMat,new Scalar(0,255,0,255));
+
+            drawLine(faceLeftEyeBrowLinePoints,mMat,new Scalar(255,0,0,255));
+            drawLine(faceRightEyeBrowLinePoints,mMat,new Scalar(0,255,0,255));
+
+            drawConnectedLine(faceLeftEyeLinePoints,mMat,new Scalar(255,0,0,255));
+            drawConnectedLine(faceRightEyeLinePoints,mMat,new Scalar(0,255,0,255));
+
+            drawLine(faceNosePoints,mMat,new Scalar(0,0,255,255));
+            drawLine(faceNoseBottomPoints,mMat,new Scalar(0,0,255,255));
+            drawConnectedLine(faceMouthPoints,mMat,new Scalar(0,0,255,255));
 
             try
             {
@@ -327,7 +395,7 @@ public class facialDetection {
 
 
                 Imgproc.cvtColor(eye,eye,Imgproc.THRESH_BINARY);
-                s.onEye(binary);
+                s.onEye(mMat);
             }
             catch (Exception e){}
 
@@ -349,6 +417,49 @@ public class facialDetection {
         return mat_image;
     }
 
+    private void drawConnectedLine(List<Point> points, Mat mMat,Scalar scalar)
+    {
+        Point lastPoint = null;
+
+        for(Point currentFacePoint : points)
+        {
+            if(lastPoint == null)
+            {
+                lastPoint = currentFacePoint;
+                continue;
+            }
+
+
+            Imgproc.line(mMat,lastPoint,currentFacePoint,scalar,2);
+            lastPoint = currentFacePoint;
+        }
+
+        Point first = points.get(0);
+        Imgproc.line(mMat,lastPoint,first,scalar,2);
+
+        points.clear();
+    }
+
+    private void drawLine(List<Point> points,Mat mMat,Scalar scalar)
+    {
+        Point lastPoint = null;
+
+        for(Point currentFacePoint : points)
+        {
+            if(lastPoint == null)
+            {
+                lastPoint = currentFacePoint;
+                continue;
+            }
+
+
+            Imgproc.line(mMat,lastPoint,currentFacePoint,scalar,2);
+            lastPoint = currentFacePoint;
+        }
+
+        points.clear();
+    }
+
     private void findViewPoint(int x, int y,int sX,int eX,int sY,int eY,Mat mat)
     {
 
@@ -360,18 +471,18 @@ public class facialDetection {
         {
             x = (range / 4) * 4;
         }
-        else if(x == 10)
-        {
-            x = (range / 4) * 3;
-        }
-        else if(x == 11)
-        {
-            x = (range / 4) * 2;
-        }
-        else if(x == 12)
-        {
-            x = (range / 4) * 1;
-        }
+//        else if(x == 10)
+//        {
+//            x = (range / 4) * 3;
+//        }
+//        else if(x == 11)
+//        {
+//            x = (range / 4) * 2;
+//        }
+//        else if(x == 12)
+//        {
+//            x = (range / 4) * 1;
+//        }
         else
         {
             x = (range / 4) * 0;
@@ -384,23 +495,23 @@ public class facialDetection {
         int rangeHeight = eY - sY;
         int equalYPixels = dHeight / rangeHeight;
 
-        if(y <= 5)
+        if(y <= 6)
         {
             y = (rangeHeight / 4) * 0;
         }
-        else if(y == 6)
-        {
-            y = (rangeHeight / 4) * 1;
-        }
-        else if(y == 7)
-        {
-            y = (rangeHeight / 4) * 2;
-        }
-        else if(y == 8)
-        {
-            y = (rangeHeight / 4) * 3;
-        }
-        else if(y >= 8)
+//        else if(y == 6)
+//        {
+//            y = (rangeHeight / 4) * 1;
+//        }
+//        else if(y == 7)
+//        {
+//            y = (rangeHeight / 4) * 2;
+//        }
+//        else if(y == 8)
+//        {
+//            y = (rangeHeight / 4) * 3;
+//        }
+        else
         {
             y = (rangeHeight / 4) * 4;
         }

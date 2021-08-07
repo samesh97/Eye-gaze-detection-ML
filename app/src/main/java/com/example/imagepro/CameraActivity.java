@@ -1,15 +1,23 @@
 package com.example.imagepro;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.SurfaceView;
@@ -18,7 +26,10 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
+
+
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -29,9 +40,19 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
+import org.tensorflow.lite.DataType;
+import org.tensorflow.lite.support.image.TensorImage;
+import org.tensorflow.lite.support.label.Category;
+import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class CameraActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2{
     private static final String TAG="MainActivity";
@@ -43,8 +64,11 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     private Mat mGray;
     private CameraBridgeViewBase mOpenCvCameraView;
     private facialDetection facialDetection;
+    private GestureDetection gestureDetection;
 
     private ArrayList<View> viewsInDisplay = new ArrayList<>();
+
+    private Bitmap image = null;
 
 
 
@@ -121,6 +145,21 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                     Utils.matToBitmap(mat,bitmap);
 
                     Bitmap finalBitmap = bitmap;
+                    image = finalBitmap;
+                    findProb(image);
+
+                    String gesture = gestureDetection.detectGestures(finalBitmap);
+
+                    TextView tv = findViewById(R.id.txt1);
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            tv.setText(gesture + " Gesture Detected");
+                        }
+                    });
+
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -143,12 +182,14 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
 
 
+                            ImageView b = findViewById(R.id.xxx);
+
+                            b.animate().x(x);
+                            b.animate().y(y);
 
                             findViewPoint(x,y);
 
 
-
-                           // Log.d("fsgseg","X - " + x + "," + xx);
 
                         }
                     });
@@ -156,6 +197,16 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
             });
         }
         catch (IOException e){
+            e.printStackTrace();
+        }
+
+
+        try
+        {
+            gestureDetection = new GestureDetection(getAssets(),CameraActivity.this,"gModel.tflite",224);
+        }
+        catch (IOException e)
+        {
             e.printStackTrace();
         }
 
@@ -250,6 +301,154 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         out = facialDetection.recognizeImage(mRgba);
         // Display out Mat image
         return mRgba;
+
+    }
+    private void saveImage(Bitmap bitmap, @NonNull String folderName) throws IOException {
+        boolean saved;
+        OutputStream fos;
+
+        Random r = new Random();
+        int v = r.nextInt(10000000);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ContentResolver resolver = getApplicationContext().getContentResolver();
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, v);
+            contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/png");
+            contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/" + folderName);
+            Uri imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
+            fos = resolver.openOutputStream(imageUri);
+        }
+        else
+        {
+            String imagesDir = Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_DCIM).toString() + File.separator + folderName;
+
+            File file = new File(imagesDir);
+
+            if (!file.exists()) {
+                file.mkdir();
+            }
+
+
+
+            File image = new File(imagesDir, v + ".png");
+            fos = new FileOutputStream(image);
+
+        }
+
+        saved = bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
+        fos.flush();
+        fos.close();
+    }
+
+    public void SaveLeftImage(View view)
+    {
+        if(image != null) {
+            try {
+                saveImage(image,"Left");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void SaveRightImage(View view)
+    {
+        if(image != null) {
+            try {
+                saveImage(image,"Idle");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    public void findProb(Bitmap img)
+    {
+//        try {
+//            GestureModel model = GestureModel.newInstance(getApplicationContext());
+//
+//            // Creates inputs for reference.
+//            TensorImage image = TensorImage.fromBitmap(img);
+//
+//            // Runs model inference and gets result.
+//            GestureModel.Outputs outputs = model.process(image);
+//            List<Category> probability = outputs.getProbabilityAsCategoryList();
+//
+//            Category max = null;
+//
+//            for(Category c : probability)
+//            {
+//                if(max == null)
+//                {
+//                    max = c;
+//                    continue;
+//                }
+//                if(max.getScore() < c.getScore())
+//                {
+//                    max = c;
+//                }
+//            }
+//
+//            TextView tv = findViewById(R.id.txt1);
+//
+//            Category finalMax = max;
+//            runOnUiThread(new Runnable() {
+//                @Override
+//                public void run()
+//                {
+//                    tv.setText("" + finalMax.getLabel() + "-" + finalMax.getScore());
+//                }
+//            });
+//
+//
+//            // Releases model resources if no longer used.
+//            model.close();
+//        } catch (IOException e) {
+//            // TODO Handle the exception
+//        }
+
+
+//        try {
+//            GestureModel model = GestureModel.newInstance(getApplicationContext());
+//
+//            // Creates inputs for reference.
+//            TensorBuffer inputFeature0 = TensorBuffer.createFixedSize(new int[]{1, 224, 224, 3}, DataType.FLOAT32);
+//            TensorImage image = TensorImage.fromBitmap(img);
+//            inputFeature0.loadBuffer(image.getBuffer());
+//
+//            // Runs model inference and gets result.
+//            GestureModel.Outputs outputs = model.process(inputFeature0);
+//            TensorBuffer outputFeature0 = outputs.getOutputFeature0AsTensorBuffer();
+//
+//            float[] a = outputFeature0.getFloatArray();
+//            for(float x : a)
+//            {
+//                Log.d("bbbb","" + x);
+//            }
+//
+//            // Releases model resources if no longer used.
+//            model.close();
+//        } catch (IOException e) {
+//
+//        }
+
+
+//        try
+//        {
+//            GestureModel model = GestureModel.newInstance(getApplicationContext());
+//            TensorImage image = TensorImage.fromBitmap(img);
+//
+//            GestureModel.Outputs outputs = model.process(image.getTensorBuffer());
+//            TensorBuffer probability = outputs.getOutputFeature0AsTensorBuffer();
+//
+//        }
+//        catch (IOException e)
+//        {
+//            e.printStackTrace();
+//        }
+
+
 
     }
 
