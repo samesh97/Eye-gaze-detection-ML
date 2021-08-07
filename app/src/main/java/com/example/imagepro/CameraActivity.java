@@ -123,9 +123,9 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
         try
         {
-            int inputSize = 150;
+            int inputImageSize = 150;
 
-            facialDetection = new FacialLandmarkDetection(getAssets(), CameraActivity.this, "facialLandmarkDetectionModel.tflite", inputSize,height,width ,new OnLandmarkResultChanged() {
+            facialDetection = new FacialLandmarkDetection(getAssets(), CameraActivity.this, "facialLandmarkDetectionModel.tflite", inputImageSize,height,width ,new OnLandmarkResultChanged() {
                 @Override
                 public void onFaceDrawn(Mat mat)
                 {
@@ -135,7 +135,6 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
                     Bitmap finalBitmap = bitmap;
                     image = finalBitmap;
-                    findProb(image);
 
                     String gesture = gestureDetection.detectGestures(finalBitmap);
 
@@ -183,10 +182,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                 }
             });
         }
-        catch (IOException e){
-            e.printStackTrace();
-        }
-
+        catch (IOException e){ e.printStackTrace(); }
 
         try
         {
@@ -233,14 +229,17 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     }
 
     @Override
-    protected void onResume() {
+    protected void onResume()
+    {
         super.onResume();
-        if (OpenCVLoader.initDebug()){
+        if (OpenCVLoader.initDebug())
+        {
             //if load success
             Log.d(TAG,"Opencv initialization is done");
             mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
-        else{
+        else
+        {
             //if not loaded
             Log.d(TAG,"Opencv is not loaded. try again");
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_4_0,this,mLoaderCallback);
@@ -248,16 +247,20 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     }
 
     @Override
-    protected void onPause() {
+    protected void onPause()
+    {
         super.onPause();
-        if (mOpenCvCameraView !=null){
+        if (mOpenCvCameraView !=null)
+        {
             mOpenCvCameraView.disableView();
         }
     }
 
-    public void onDestroy(){
+    public void onDestroy()
+    {
         super.onDestroy();
-        if(mOpenCvCameraView !=null){
+        if(mOpenCvCameraView !=null)
+        {
             mOpenCvCameraView.disableView();
         }
 
@@ -270,6 +273,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     public void onCameraViewStopped(){
         mRgba.release();
     }
+
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame)
     {
 
@@ -289,7 +293,8 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         return mRgba;
 
     }
-    private void saveImage(Bitmap bitmap, @NonNull String folderName) throws IOException {
+    private void saveImage(Bitmap bitmap, @NonNull String folderName) throws IOException
+    {
         boolean saved;
         OutputStream fos;
 
@@ -348,94 +353,6 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                 e.printStackTrace();
             }
         }
-    }
-    public void findProb(Bitmap img)
-    {
-//        try {
-//            GestureModel model = GestureModel.newInstance(getApplicationContext());
-//
-//            // Creates inputs for reference.
-//            TensorImage image = TensorImage.fromBitmap(img);
-//
-//            // Runs model inference and gets result.
-//            GestureModel.Outputs outputs = model.process(image);
-//            List<Category> probability = outputs.getProbabilityAsCategoryList();
-//
-//            Category max = null;
-//
-//            for(Category c : probability)
-//            {
-//                if(max == null)
-//                {
-//                    max = c;
-//                    continue;
-//                }
-//                if(max.getScore() < c.getScore())
-//                {
-//                    max = c;
-//                }
-//            }
-//
-//            TextView tv = findViewById(R.id.txt1);
-//
-//            Category finalMax = max;
-//            runOnUiThread(new Runnable() {
-//                @Override
-//                public void run()
-//                {
-//                    tv.setText("" + finalMax.getLabel() + "-" + finalMax.getScore());
-//                }
-//            });
-//
-//
-//            // Releases model resources if no longer used.
-//            model.close();
-//        } catch (IOException e) {
-//            // TODO Handle the exception
-//        }
-
-
-//        try {
-//            GestureModel model = GestureModel.newInstance(getApplicationContext());
-//
-//            // Creates inputs for reference.
-//            TensorBuffer inputFeature0 = TensorBuffer.createFixedSize(new int[]{1, 224, 224, 3}, DataType.FLOAT32);
-//            TensorImage image = TensorImage.fromBitmap(img);
-//            inputFeature0.loadBuffer(image.getBuffer());
-//
-//            // Runs model inference and gets result.
-//            GestureModel.Outputs outputs = model.process(inputFeature0);
-//            TensorBuffer outputFeature0 = outputs.getOutputFeature0AsTensorBuffer();
-//
-//            float[] a = outputFeature0.getFloatArray();
-//            for(float x : a)
-//            {
-//                Log.d("bbbb","" + x);
-//            }
-//
-//            // Releases model resources if no longer used.
-//            model.close();
-//        } catch (IOException e) {
-//
-//        }
-
-
-//        try
-//        {
-//            GestureModel model = GestureModel.newInstance(getApplicationContext());
-//            TensorImage image = TensorImage.fromBitmap(img);
-//
-//            GestureModel.Outputs outputs = model.process(image.getTensorBuffer());
-//            TensorBuffer probability = outputs.getOutputFeature0AsTensorBuffer();
-//
-//        }
-//        catch (IOException e)
-//        {
-//            e.printStackTrace();
-//        }
-
-
-
     }
 
 }
