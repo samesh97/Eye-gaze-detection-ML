@@ -8,7 +8,6 @@ import android.util.Log;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfRect;
@@ -33,23 +32,20 @@ import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Vector;
 
-public class facialDetection {
+public class FacialLandmarkDetection {
 
-    // define Interpreter
     private final Interpreter interpreter;
-    // now define input size and pixel size
-    private final int INPUT_SIZE;
-    private GpuDelegate gpuDelegate;
+
+    private final int inputImageSize;
 
     private CascadeClassifier cascadeClassifier;
 
-    private final success s;
+    private final OnLandmarkResultChanged listener;
 
-    private int dHeight,dWidth = 0;
+    private int deviceHeight = 0;
+    private int deviceWidth = 0;
 
     private List<Point> faceLeftJawLinePoints = new ArrayList<>();
     private List<Point> faceRightJawLinePoints = new ArrayList<>();
@@ -61,25 +57,30 @@ public class facialDetection {
     private List<Point> faceNoseBottomPoints = new ArrayList<>();
     private List<Point> faceMouthPoints = new ArrayList<>();
 
-    // on start
-    facialDetection(AssetManager assetManager, Context context, String modelPath, int inputSize,int height,int width,success s) throws IOException{
-        INPUT_SIZE=inputSize;
+    FacialLandmarkDetection(AssetManager assetManager, Context context, String modelPath,
+                            int inputSize, int height, int width,
+                            OnLandmarkResultChanged listener) throws IOException
+    {
 
-        this.dHeight = height;
-        this.dWidth = width;
-        this.s = s;
+        this.inputImageSize = inputSize;
+
+        this.deviceHeight = height;
+        this.deviceWidth = width;
+        this.listener = listener;
 
         // define GPU and number of thread to Interpreter
-        Interpreter.Options options=new Interpreter.Options();
-        gpuDelegate=new GpuDelegate();
+        Interpreter.Options options = new Interpreter.Options();
+        GpuDelegate gpuDelegate = new GpuDelegate();
         options.addDelegate(gpuDelegate);
         options.setNumThreads(4); // change number of thread according to your phone
 
         // load CNN model
-        interpreter=new Interpreter(loadModelFile(assetManager,modelPath),options);
+        interpreter = new Interpreter(loadModelFile(assetManager,modelPath),options);
         Log.d("FacialDetector","CNN model is loaded");
+
         // Now load haar cascade classifier
-        try{
+        try
+        {
             // define input stream
             InputStream is=context.getResources().openRawResource(R.raw.haarcascade_frontalface_alt);
             // define folder path
@@ -103,23 +104,10 @@ public class facialDetection {
             Log.d("FacialDetector","Classifier is loaded");
 
 
-            // Before watching this video please watch my previous video :
-            //Facial Landmark Detection Android App Using TFLite(GPU) and OpenCV: Load CNN Model Part 2
-            // You will end up with this code
-
-            // In this video, we will do two things:
-            // 1. Detect face on frame
-            // 2. Pass cropped face to Interpreter which will give x, y co-ordinate of 15 keypoints on face
-            // Let's start
-
         }
-        catch (IOException e){
-            e.printStackTrace();
-        }
+        catch (IOException e){ e.printStackTrace(); }
 
     }
-
-    // Creata a new function input as Mat and output is also Mat format
     public Mat recognizeImage(Mat mat_image)
     {
 
@@ -132,7 +120,7 @@ public class facialDetection {
         // do all process here
         // face detection
         // Convert mat_image to grayscale image
-        Mat grayscaleImage=new Mat();
+        Mat grayscaleImage = new Mat();
         Imgproc.cvtColor(mat_image,grayscaleImage,Imgproc.COLOR_RGBA2GRAY);
         // define height, width of grayscaleImage
         int height =grayscaleImage.height();
@@ -145,17 +133,16 @@ public class facialDetection {
         // define MatOfRect of faces
         MatOfRect faces=new MatOfRect();
 
-        if(cascadeClassifier !=null){
-            // detect face                        input       output
+        if(cascadeClassifier !=null)
+        {
             cascadeClassifier.detectMultiScale(grayscaleImage,faces,1.1,2,2,
                     new Size(absoluteFaceSize,absoluteFaceSize),new Size());
-                //      minimum size
+
         }
 
         // create faceArray
         Rect[] faceArray = faces.toArray();
         // loop through each face in faceArray
-
 
 
         for(int i = 0; i < faceArray.length; i++)
@@ -196,7 +183,7 @@ public class facialDetection {
 
 
 
-            Size sz = new Size(INPUT_SIZE,INPUT_SIZE);
+            Size sz = new Size(inputImageSize,inputImageSize);
             Mat resizeImage = new Mat();
             Mat mMat = new Mat();
             Imgproc.resize(cropped_rgba,resizeImage,sz,0,0,Imgproc.INTER_CUBIC);
@@ -213,7 +200,7 @@ public class facialDetection {
             int c_height = bitmap.getHeight();
             int c_width = bitmap.getWidth();
 
-            Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap,INPUT_SIZE,INPUT_SIZE,false);
+            Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap,inputImageSize,inputImageSize,false);
             ByteBuffer byteBuffer = convertBitmapToByteBuffer(scaledBitmap);
 
 
@@ -251,9 +238,7 @@ public class facialDetection {
                     eyeEndingY = (int) y_val;
                 }
 
-                 //Imgproc.circle(resizeImage,new Point(x_val,y_val),1, new Scalar(0,255,0,255), -1);
 
-//                 || j == 42 || j == 16 || j == 24
                 if(j >= 0 && j <= 16)
                 {
                     Point point = new Point(x_val,y_val);
@@ -395,7 +380,7 @@ public class facialDetection {
 
 
                 Imgproc.cvtColor(eye,eye,Imgproc.THRESH_BINARY);
-                s.onEye(mMat);
+                listener.onFaceDrawn(mMat);
             }
             catch (Exception e){}
 
@@ -409,8 +394,6 @@ public class facialDetection {
         }
 
 
-        // but returned mat_image should be same as passing mat
-        // rotate back it -90 degree
         Mat b = mat_image.t();
         Core.flip(b,mat_image,0);
         b.release();
@@ -465,7 +448,7 @@ public class facialDetection {
 
 
         int range = eX - sX;
-        int equalXPixels = dWidth / range;
+        int equalXPixels = deviceWidth / range;
 
         if(x <= 9)
         {
@@ -493,7 +476,7 @@ public class facialDetection {
 
 
         int rangeHeight = eY - sY;
-        int equalYPixels = dHeight / rangeHeight;
+        int equalYPixels = deviceHeight / rangeHeight;
 
         if(y <= 6)
         {
@@ -523,15 +506,16 @@ public class facialDetection {
 
 
 
-        s.onCoChanged(calcX,calcY);
+        listener.onCoordinatesChanged(calcX,calcY);
 
         Log.d("fsffsefsess","Y - " + y + " Range - " + (eY - sY));
 
     }
 
-    private ByteBuffer convertBitmapToByteBuffer(Bitmap scaledBitmap) {
+    private ByteBuffer convertBitmapToByteBuffer(Bitmap scaledBitmap)
+    {
         ByteBuffer byteBuffer;
-        int inputSize=INPUT_SIZE;// 96
+        int inputSize = inputImageSize;// 96
 
         int quant = 1;
         if(quant == 0)
@@ -563,7 +547,8 @@ public class facialDetection {
     }
     // now call this function in CameraActivity
 
-    private MappedByteBuffer loadModelFile(AssetManager assetManager, String modelPath) throws IOException{
+    private MappedByteBuffer loadModelFile(AssetManager assetManager, String modelPath) throws IOException
+    {
         // description of file
         AssetFileDescriptor assetFileDescriptor=assetManager.openFd(modelPath);
         FileInputStream inputStream=new FileInputStream(assetFileDescriptor.getFileDescriptor());

@@ -1,7 +1,6 @@
 package com.example.imagepro;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -12,7 +11,6 @@ import android.content.ContentValues;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -27,8 +25,6 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
-
 
 
 import org.opencv.android.BaseLoaderCallback;
@@ -39,19 +35,12 @@ import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
-import org.tensorflow.lite.DataType;
-import org.tensorflow.lite.support.image.TensorImage;
-import org.tensorflow.lite.support.label.Category;
-import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 public class CameraActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2{
@@ -59,11 +48,9 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
 
     private Button button;
-
     private Mat mRgba;
-    private Mat mGray;
     private CameraBridgeViewBase mOpenCvCameraView;
-    private facialDetection facialDetection;
+    private FacialLandmarkDetection facialDetection;
     private GestureDetection gestureDetection;
 
     private ArrayList<View> viewsInDisplay = new ArrayList<>();
@@ -134,11 +121,13 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         int height = metrics.heightPixels;
         int width = metrics.widthPixels;
 
-        try{
-            int inputSize=150;
-            facialDetection=new facialDetection(getAssets(), CameraActivity.this, "model.tflite", inputSize,height,width ,new success() {
+        try
+        {
+            int inputSize = 150;
+
+            facialDetection = new FacialLandmarkDetection(getAssets(), CameraActivity.this, "model.tflite", inputSize,height,width ,new OnLandmarkResultChanged() {
                 @Override
-                public void onEye(Mat mat)
+                public void onFaceDrawn(Mat mat)
                 {
                     Bitmap bitmap = null;
                     bitmap = Bitmap.createBitmap(mat.cols(),mat.rows(),Bitmap.Config.ARGB_8888);
@@ -160,21 +149,19 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                         }
                     });
 
-                    runOnUiThread(new Runnable() {
+                    runOnUiThread(new Runnable()
+                    {
                         @Override
-                        public void run() {
-
+                        public void run()
+                        {
                             ImageView b = findViewById(R.id.xxxz);
                             b.setImageBitmap(finalBitmap);
-
-
-
                         }
                     });
                 }
 
                 @Override
-                public void onCoChanged(int x, int y) {
+                public void onCoordinatesChanged(int x, int y) {
 
                     runOnUiThread(new Runnable() {
                         @Override
@@ -276,9 +263,9 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
     }
 
-    public void onCameraViewStarted(int width ,int height){
+    public void onCameraViewStarted(int width ,int height)
+    {
         mRgba=new Mat(height,width, CvType.CV_8UC4);
-        mGray =new Mat(height,width,CvType.CV_8UC1);
     }
     public void onCameraViewStopped(){
         mRgba.release();
@@ -287,7 +274,6 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     {
 
         mRgba=inputFrame.rgba();
-        mGray=inputFrame.gray();
 
         Core.flip(mRgba,mRgba,-1);
 
