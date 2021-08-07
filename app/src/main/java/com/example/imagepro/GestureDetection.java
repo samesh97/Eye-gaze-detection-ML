@@ -88,42 +88,60 @@ public class GestureDetection
         ByteBuffer byteBuffer = convertBitmapToByteBuffer(scaledBitmap);
 
 
-        float[][] result = new float[1][3];
+        float[][] result = new float[1][5];
         interpreter.run(byteBuffer,result);
 
         for(int i = 0; i < result.length; i++)
         {
-            float idle = (float) Array.get(Array.get(result,0),i);
-            float left = (float) Array.get(Array.get(result,0),i+1);
-            float right = (float) Array.get(Array.get(result,0),i+2);
+            float idle = (float) Array.get(Array.get(result,0),i + 0);
+            float left = (float) Array.get(Array.get(result,0),i + 1);
+            float right = (float) Array.get(Array.get(result,0),i + 2);
+            float top = (float) Array.get(Array.get(result,0),i + 3);
+            float bottom = (float) Array.get(Array.get(result,0),i + 4);
 
-//            Log.d("TestResults","Idle" + idle);
-//            Log.d("TestResults","Left" + left);
-//            Log.d("TestResults","Right" + right);
 
+            float max = 0;
 
             if(idle > left)
             {
                 if(idle > right)
                 {
                     output = "Idle";
+                    max = idle;
                     //idle
                 }
                 else
                 {
                     output = "Right";
+                    max = right;
                     //right
                 }
             }
             else if(right > left)
             {
                 output = "Right";
+                max = right;
                 //right
             }
             else
             {
                 output = "Left";
+                max = left;
                 //left
+            }
+
+            if(top > max)
+            {
+                if(top > bottom)
+                {
+                    //top
+                    output = "Top";
+                }
+                else
+                {
+                    //bottom
+                    output = "Bottom";
+                }
             }
 
         }

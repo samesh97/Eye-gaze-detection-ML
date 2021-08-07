@@ -203,7 +203,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
         try
         {
-            gestureDetection = new GestureDetection(getAssets(),CameraActivity.this,"gModel.tflite",224);
+            gestureDetection = new GestureDetection(getAssets(),CameraActivity.this,"xModel.tflite",224);
         }
         catch (IOException e)
         {
@@ -346,7 +346,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     {
         if(image != null) {
             try {
-                saveImage(image,"Left");
+                saveImage(image,"Top");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -357,7 +357,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     {
         if(image != null) {
             try {
-                saveImage(image,"Idle");
+                saveImage(image,"Bottom");
             } catch (IOException e) {
                 e.printStackTrace();
             }
