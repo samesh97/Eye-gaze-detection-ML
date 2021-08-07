@@ -125,7 +125,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         {
             int inputSize = 150;
 
-            facialDetection = new FacialLandmarkDetection(getAssets(), CameraActivity.this, "model.tflite", inputSize,height,width ,new OnLandmarkResultChanged() {
+            facialDetection = new FacialLandmarkDetection(getAssets(), CameraActivity.this, "facialLandmarkDetectionModel.tflite", inputSize,height,width ,new OnLandmarkResultChanged() {
                 @Override
                 public void onFaceDrawn(Mat mat)
                 {
@@ -190,7 +190,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
         try
         {
-            gestureDetection = new GestureDetection(getAssets(),CameraActivity.this,"xModel.tflite",224);
+            gestureDetection = new GestureDetection(getAssets(),CameraActivity.this,"gestureDetectionModel.tflite",224);
         }
         catch (IOException e)
         {
